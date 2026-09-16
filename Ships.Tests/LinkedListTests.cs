@@ -13,4 +13,13 @@ public class LinkedListTests
 
 		Assert.Equal(3, list.Count);
 	}
+
+	[Fact]
+	public void TestAdd()
+	{
+		GA.Collections.LinkedList<int> list = new GA.Collections.LinkedList<int>();
+		list.Add(1);
+
+		Assert.True(list.Contains(1));
+	}
 }

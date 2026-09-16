@@ -40,6 +40,10 @@ namespace GA.Collections
 
 		public void AddHead(T item)
 		{
+			if (IsReadOnly)
+			{
+				throw new System.NotSupportedException("The collection is read-only.");
+			}
 			Node node = new Node(item);
 
 			if (Head == null)

@@ -83,5 +83,62 @@ namespace GA.Ships.Pathfinding
 
 			return path;
 		}
+
+		public IList<Cell> GetReachableCells(Cell start, int maxSteps)
+		{
+			List<Cell> reachableCells = new List<Cell>();
+
+			if (start == null)
+			{
+				throw new ArgumentNullException(nameof(start), "Starting cell cannot be null.");
+			}
+			if (maxSteps < 0)
+			{
+				throw new ArgumentOutOfRangeException(nameof(maxSteps), "Maximum steps cannot be negative.");
+			}
+
+			// Queue of cells to examine and their distance from the starting cell in grid steps.
+			Queue<(Cell cell, int steps)> queue = new Queue<(Cell, int)>();
+
+			// Examined cells are stored to avoid examining same cell multiple times.
+			HashSet<Cell> examinedCells = new HashSet<Cell>();
+
+			// Begin examining cells from the starting cell.
+			queue.Enqueue((start, 0));
+			examinedCells.Add(start);
+
+			while (queue.Count > 0)
+			{
+				(Cell current, int currentSteps) = queue.Dequeue();
+				// The maxSteps does not include the start Cell.
+				if (currentSteps > 0)
+				{
+					reachableCells.Add(current);
+				}
+
+				// Stop examining neighbouring cells once maxSteps is reached.
+				if (currentSteps >= maxSteps)
+				{
+					continue;
+				}
+
+
+				// Creates a list of the walkable cells that neighbour the current cell.
+				// Diagonal neighbours are excluded.
+				IList<Cell> neighbours = _grid.GetNeighbours(current, false);
+
+				foreach (Cell cell in neighbours)
+				{
+					// Exclude cells that have already been examined.
+					if (!examinedCells.Contains(cell))
+					{
+						// Add the cell for the next step to the queue.
+						examinedCells.Add(cell);
+						queue.Enqueue((cell, currentSteps + 1));
+					}
+				}
+			}
+			return reachableCells;
+		}
 	}
 }

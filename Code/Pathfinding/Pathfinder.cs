@@ -140,5 +140,96 @@ namespace GA.Ships.Pathfinding
 			}
 			return reachableCells;
 		}
+
+		/// <summary>
+		/// Lists every cell whose minimum total movement cost from start is at most maxMovementPoints.
+		/// </summary>
+		/// <param name="start">Starting cell.</param>
+		/// <param name="maxMovementPoints">The maximum movement cost available.</param>
+		/// <param name="useDiagonals">If diagonal movement is permitted.</param>
+		/// <returns>A list of every cell whose minimum total movement cost from start is at most maxMovementPoints.</returns>
+		public IList<Cell> GetReachableCells(Cell start, int maxMovementPoints, bool useDiagonals)
+		{
+			if (start == null)
+			{
+				throw new ArgumentNullException(nameof(start), "Starting cell cannot be null.");
+			}
+			if (maxMovementPoints < 0)
+			{
+				throw new ArgumentOutOfRangeException(nameof(maxMovementPoints), "Maximum movement points cannot be negative.");
+			}
+
+			List<Cell> reachableCells = new List<Cell>();
+			if (maxMovementPoints == 0) return reachableCells;
+
+			// Minimum movement cost discovered to reach cell
+			var minCostToCell = new Dictionary<Cell, int>();
+			var priorityQueue = new GA.Collections.PriorityQueue<QueueNode>();
+
+			minCostToCell[start] = 0;
+			priorityQueue.Enqueue(new QueueNode(start, 0));
+
+			while (priorityQueue.Count > 0)
+			{
+				QueueNode current = priorityQueue.Dequeue();
+
+				// Cheaper path already found.
+				if (current.Cost > minCostToCell[current.Cell])
+				{
+					continue;
+				}
+
+				// Add accepted cells that are not the starting cell.
+				if (current.Cell != start)
+				{
+					reachableCells.Add(current.Cell);
+				}
+
+				IList<Cell> neighbours = _grid.GetNeighbours(current.Cell, useDiagonals);
+
+				for (int i = 0; i < neighbours.Count; i++)
+				{
+					Cell neighbour = neighbours[i];
+
+					// Exclude null cells and cells that are not walkable.
+					if (neighbour == null || !neighbour.IsWalkable)
+					{
+						continue;
+					}
+
+					// Calculate cost to reach this neighbour.
+					int nextCost = current.Cost + neighbour.Cost;
+					// Check if maxmimum movement points allows moving to this neighbour.
+					if (nextCost <= maxMovementPoints)
+					{
+						// Check that the neighbour is either unexamined or a cheaper route.
+						if (!minCostToCell.ContainsKey(neighbour) || nextCost < minCostToCell[neighbour])
+						{
+							minCostToCell[neighbour] = nextCost;
+							priorityQueue.Enqueue(new QueueNode(neighbour, nextCost));
+						}
+					}
+				}
+			}
+			return reachableCells;
+		}
+
+		private readonly struct QueueNode : IComparable<QueueNode>
+		{
+			public readonly Cell Cell;
+			public readonly int Cost;
+
+			public QueueNode(Cell cell, int cost)
+			{
+				Cell = cell;
+				Cost = cost;
+			}
+
+			public int CompareTo(QueueNode comparable)
+			{
+				// Return node with lowest cost.
+				return Cost.CompareTo(comparable.Cost);
+			}
+		}
 	}
 }
